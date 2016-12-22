@@ -26,7 +26,9 @@ Public Class frmThreads
         RaiseEvent WorkProgress(sender, e)
     End Sub
     Event WorkProgress(sender As Object, e As WorkProgressInfoEventArgs)
-
+    Dim prgUpdate As Action(Of Tuple(Of Integer, Integer)) = Sub(tmpnums)
+                                                                 OnWorkProgress(Me, New WorkProgressInfoEventArgs With {.Progress = CInt(tmpnums.Item1 / tmpnums.Item2 * 100)})
+                                                             End Sub
     Function DoWork() As Integer
         Dim num As Integer = 0
 
@@ -37,13 +39,13 @@ Public Class frmThreads
             Dim tmp As Integer = x
             Thread.Sleep(1000) 'NEVER use this in real code.
             'Just used to artificially extend the time this process takes
-            Dim prgUpdate As Action = Sub()
-                                          OnWorkProgress(Me, New WorkProgressInfoEventArgs With {.Progress = CInt(tmp / count * 100)})
-                                      End Sub
+            Dim data As Tuple(Of Integer, Integer) = Tuple.Create(Of Integer, Integer)(tmp, count)
             If InvokeRequired Then
-                Invoke(prgUpdate)
+                Invoke(Sub()
+                           prgUpdate(data)
+                       End Sub)
             Else
-                prgUpdate()
+                prgUpdate(data)
             End If
 
         Next
